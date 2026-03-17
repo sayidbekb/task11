@@ -1,0 +1,33 @@
+# Python virtual environment
+.venv/
+env/
+.vscode
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Logs
+logs/
+*.log
+
+# DBT artifacts
+target/
+dbt_packages/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/project-specific
+.vscode/
+.idea/
+
+# Python package distributions
+*.egg-info/
+dist/
+build/
+
+# Optional: caches
+*.pytest_cache/
