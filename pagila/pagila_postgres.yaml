@@ -1,0 +1,101 @@
+# ------------------------------------------
+# Namespace
+# ------------------------------------------
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pagila
+
+---
+
+# ------------------------------------------
+# ConfigMap for SQL initialization
+# Replace content with your actual SQL files if needed
+# ------------------------------------------
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pagila-init
+  namespace: pagila
+data:
+  1-pagila-schema.sql: |
+    -- Paste your pagila-schema.sql content here
+  1-pagila-schema-jsonb.sql: |
+    -- Paste your pagila-schema-jsonb.sql content here
+  2-pagila-data.sql: |
+    -- Paste your pagila-data.sql content here
+  3-restore-pagila-data-jsonb.sh: |
+    #!/bin/bash
+    # Your restore script content here
+
+---
+
+# ------------------------------------------
+# Deployment
+# ------------------------------------------
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pagila
+  namespace: pagila
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pagila
+  template:
+    metadata:
+      labels:
+        app: pagila
+    spec:
+      containers:
+        - name: pagila
+          image: postgres:17
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: pagila
+            - name: POSTGRES_USER
+              value: postgres
+            - name: POSTGRES_PASSWORD
+              value: "123456"
+          command:
+            - "postgres"
+            - "-c"
+            - "wal_level=logical"
+            - "-c"
+            - "max_replication_slots=10"
+            - "-c"
+            - "max_wal_senders=10"
+            - "-c"
+            - "listen_addresses=*"
+          volumeMounts:
+            - name: pagila-init
+              mountPath: /docker-entrypoint-initdb.d
+            - name: pgdata
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: pagila-init
+          configMap:
+            name: pagila-init
+        - name: pgdata
+          emptyDir: {}  # Use PersistentVolumeClaim if you want persistent data
+
+---
+
+# ------------------------------------------
+# Service
+# ------------------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: pagila
+  namespace: pagila
+spec:
+  selector:
+    app: pagila
+  ports:
+    - port: 5432
+      targetPort: 5432
+  type: ClusterIP
